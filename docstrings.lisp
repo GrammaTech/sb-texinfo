@@ -471,7 +471,8 @@ with #\@. Optionally downcase the result."
 (defun unescape-for-texinfo (string &aux last-char)
   "Unescape obvious texinfo commands in STRING.
 STRING is assumed to be the result of `escape-for-texinfo'."
-  (let ((w/o-braces '("section" "subsection" "subsubsection" "cindex" "node" "include"))
+  (let ((w/o-braces '("section" "subsection" "subsubsection" "cindex" "node"
+                      "include" "end" "menu"))
         (w/braces '("uref" "ref" "url" "code"))
         (braces 0))
     (flet ((subword-at (i word)
@@ -514,7 +515,7 @@ STRING is assumed to be the result of `escape-for-texinfo'."
 ;;; line markups
 
 (defvar *not-symbols*
-  '("ANSI" "CLHS" "UNIX" "SBCL" "POSIX" "ISO" "ASM" "C" "C++"))
+  '("ANSI" "CLHS" "UNIX" "SBCL" "POSIX" "ISO" "ASM" "C" "C++" "AST"))
 
 (defun frob-ellipsis (line)
   ;; READ-FROM-STRING chokes on ... so replace it.

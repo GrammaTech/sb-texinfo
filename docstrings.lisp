@@ -1365,7 +1365,7 @@ if a comment contains invalid Texinfo markup, you lose."
               (write-texinfo-string (get-string comment))))))
       directory)))
 
-(defun generate-includes (directory packages &key base-package)
+(defun generate-includes (directory packages &key base-package flatten extra-symbols)
   "Create files in DIRECTORY containing Texinfo markup of all docstrings of
 each exported symbol in PACKAGES. The DIRECTORY is created if it does not
 exist yet. Trailing slash is required.

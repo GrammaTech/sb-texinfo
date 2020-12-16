@@ -485,8 +485,9 @@ with #\@. Optionally downcase the result."
   "Unescape obvious texinfo commands in STRING.
 STRING is assumed to be the result of `escape-for-texinfo'."
   (let ((w/o-braces '("section" "subsection" "subsubsection" "cindex" "node"
-                      "include" "end" "menu" "subsubheading"))
-        (w/braces '("uref" "ref" "pxref" "url" "code" "anchor"))
+                      "include" "end" "menu" "subsubheading" "example"
+                      "cartouche"))
+        (w/braces '("uref" "ref" "pxref" "url" "code" "anchor" "env" "file"))
         (braces 0))
     (flet ((subword-at (i word &aux (subseq-end (+ i (length word))))
              (when (<= subseq-end string-length)

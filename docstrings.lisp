@@ -480,16 +480,19 @@ with #\@. Optionally downcase the result."
 
 ;;; TODO: Maybe everything in here should at some point get
 ;;;       first-class support as specialized syntax.
-(defun unescape-for-texinfo (string &aux last-char)
+(defun unescape-for-texinfo
+    (string &aux last-char (string-length (length string)))
   "Unescape obvious texinfo commands in STRING.
 STRING is assumed to be the result of `escape-for-texinfo'."
   (let ((w/o-braces '("section" "subsection" "subsubsection" "cindex" "node"
-                      "include" "end" "menu" "subsubheading"))
-        (w/braces '("uref" "ref" "pxref" "url" "code" "anchor"))
+                      "include" "end" "menu" "subsubheading" "example"
+                      "cartouche"))
+        (w/braces '("uref" "ref" "pxref" "url" "code" "anchor" "env" "file"))
         (braces 0))
-    (flet ((subword-at (i word)
-             (string= (subseq string i (min (+ i (length word))))
-                      word))
+    (flet ((subword-at (i word &aux (subseq-end (+ i (length word))))
+             (when (<= subseq-end string-length)
+               (string= (subseq string i subseq-end)
+                        word)))
            (next-char (i) (aref string i)))
       (with-output-to-string (s)
         (loop

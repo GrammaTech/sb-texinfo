@@ -268,12 +268,8 @@ symbols or lists of symbols."))
 
 (defun node-name (doc)
   "Returns TexInfo node name as a string for a DOCUMENTATION instance."
-  (let* ((kind (get-kind doc))
-         (name (format nil "~:(~A~) ~(~A~)" kind (name-using-kind/name kind (get-safe-name doc) doc))))
-    (when (search "{" name)
-      (format t "~S ~S~%" name doc)
-      (setf *it* doc))
-    name))
+  (let ((kind (get-kind doc)))
+    (format nil "~:(~A~) ~(~A~)" kind (name-using-kind/name kind (get-safe-name doc) doc))))
 
 (defun package-shortest-name (package)
   (let* ((names (cons (package-name package) (package-nicknames package)))

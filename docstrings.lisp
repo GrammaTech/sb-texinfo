@@ -1416,22 +1416,21 @@ for which we wish to create include files, as well."
       (ensure-directories-exist directory)
       (dolist (package packages)
         (dolist (doc (collect-documentation (find-package package) :flatten flatten :extra-symbols extra-symbols))
-          (unless (skip-difficult-doc doc)
-            (cond ((function-documentation-p doc)
-                   (setf funsp t))
-                  ((variable-documentation-p doc)
-                   (setf varsp t))
-                  ((type-documentation-p doc)
-                   (setf typesp t)))
-            (with-texinfo-file (merge-pathnames (include-pathname doc) directory)
-              (write-texinfo doc)))))
+          (cond ((function-documentation-p doc)
+                 (setf funsp t))
+                ((variable-documentation-p doc)
+                 (setf varsp t))
+                ((type-documentation-p doc)
+                 (setf typesp t)))
+          (with-texinfo-file (merge-pathnames (include-pathname doc) directory)
+            (write-texinfo doc))))
       (with-texinfo-file (merge-pathnames "sb-texinfo.texinfo" directory)
         (write-texinfo-macros)
         (dolist (package packages)
           (write-package-macro package))
         (write-packageish-macro nil "nopkg"))
       (with-texinfo-file (merge-pathnames "short-backmatter.texinfo" directory)
-        (write-backmatter :concept-index nil
+        (write-backmatter :concept-index t
                           :function-index funsp
                           :variable-index varsp
                           :type-index typesp

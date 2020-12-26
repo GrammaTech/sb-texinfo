@@ -1368,6 +1368,14 @@ if a comment contains invalid Texinfo markup, you lose."
               (write-texinfo-string (get-string comment))))))
       directory)))
 
+(defun skip-difficult-doc (doc)
+  (unless (or (search "{" (get-name doc))
+              (search "}" (get-name doc))
+              (search "@" (get-name doc))) ; etc...
+    ;; TODO: difficult names are causing problems for texinfo.
+    (error "Difficult names like ~S are causing problems for texinfo" (get-name doc))
+    t))
+
 (defun generate-includes (directory packages &key base-package flatten extra-symbols)
   "Create files in DIRECTORY containing Texinfo markup of all docstrings of
 each exported symbol in PACKAGES. The DIRECTORY is created if it does not
@@ -1405,14 +1413,15 @@ for which we wish to create include files, as well."
       (ensure-directories-exist directory)
       (dolist (package packages)
         (dolist (doc (collect-documentation (find-package package) :flatten flatten :extra-symbols extra-symbols))
-          (cond ((function-documentation-p doc)
-                 (setf funsp t))
-                ((variable-documentation-p doc)
-                 (setf varsp t))
-                ((type-documentation-p doc)
-                 (setf typesp t)))
-          (with-texinfo-file (merge-pathnames (include-pathname doc) directory)
-            (write-texinfo doc))))
+          (unless (skip-difficult-doc doc)
+            (cond ((function-documentation-p doc)
+                   (setf funsp t))
+                  ((variable-documentation-p doc)
+                   (setf varsp t))
+                  ((type-documentation-p doc)
+                   (setf typesp t)))
+            (with-texinfo-file (merge-pathnames (include-pathname doc) directory)
+              (write-texinfo doc)))))
       (with-texinfo-file (merge-pathnames "sb-texinfo.texinfo" directory)
         (write-texinfo-macros)
         (dolist (package packages)

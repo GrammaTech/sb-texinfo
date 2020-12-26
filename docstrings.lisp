@@ -71,9 +71,18 @@
   "A list of symbols accepted as second argument of `documentation'")
 
 (defparameter *character-replacements*
-  '((#\* . "star") (#\/ . "slash") (#\+ . "plus")
-    (#\< . "lt") (#\> . "gt")
-    (#\= . "equals") (#\? . "question-mark"))
+  '((#\* . "star")
+    (#\/ . "slash")
+    (#\+ . "plus")
+    (#\< . "lt")
+    (#\> . "gt")
+    (#\= . "equals")
+    (#\? . "question-mark")
+    (#\{ . "curly-brace-left")
+    (#\} . "curly-brace-right")
+    (#\) . "paren-left")
+    (#\( . "paren-right")
+    (#\@ . "atsign"))
   "Characters and their replacement names that `alphanumize' uses. If
 the replacements contain any of the chars they're supposed to replace,
 you deserve to lose.")

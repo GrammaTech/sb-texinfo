@@ -97,7 +97,17 @@
     (#\` . "backslash")
     (#\' . "singlequote")
     (#\? . "questionmark")
-    (#\, . "comma"))
+    (#\, . "comma")
+    (#\. . "period")
+    (#\z_notation_right_image_bracket . "z_notation_right_image_bracket")
+    (#\z_notation_left_image_bracket . "z_notation_left_image_bracket")
+    (#\right_white_curly_bracket . "right_white_curly_bracket")
+    (#\left_white_curly_bracket . "left_white_curly_bracket")
+    (#\not_sign . "not_sign")
+    (#\element_of . "element_of")
+    (#\square_root . "square_root")
+    (#\cube_root . "cube_root")
+    (#\fourth_root . "fourth_root"))
   "Characters and their replacement names that `alphanumize' uses. If
 the replacements contain any of the chars they're supposed to replace,
 you deserve to lose.")

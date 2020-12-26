@@ -83,12 +83,26 @@
     (#\} . "curly-brace-right")
     (#\) . "paren-left")
     (#\( . "paren-right")
-    (#\@ . "atsign"))
+    (#\@ . "atsign")
+    (#\newline . "newline")
+    (#\! . "exclamationpoint")
+    (#\" . "doublequote")
+    (#\$ . "dollarsign")
+    (#\& . "ampersand")
+    (#\[ . "square-brace-left")
+    (#\] . "square-brace-right")
+    (#\: . "colon")
+    (#\| . "pipe")
+    (#\\ . "forward-slash")
+    (#\` . "backslash")
+    (#\' . "singlequote")
+    (#\? . "questionmark")
+    (#\, . "comma"))
   "Characters and their replacement names that `alphanumize' uses. If
 the replacements contain any of the chars they're supposed to replace,
 you deserve to lose.")
 
-(defparameter *characters-to-drop* '(#\\ #\` #\' #\?)
+(defparameter *characters-to-drop* nil
   "Characters that should be removed by `alphanumize'.")
 
 (defparameter *texinfo-escaped-chars* "@{}"
@@ -168,29 +182,34 @@ you deserve to lose.")
 (defun flatten-to-string (list)
   (format nil "~{~A~^-~}" (flatten list)))
 
-(defun alphanumize (original)
-  "Construct a string without characters like *`' that will f-star-ck
+(defgeneric alphanumize (original)
+  (:documentation "Construct a string without characters like *`' that will f-star-ck
 up filename handling. See `*character-replacements*' and
-`*characters-to-drop*' for customization."
-  (let ((name (remove-if (lambda (x) (member x *characters-to-drop*))
-                         (if (listp original)
-                             (flatten-to-string original)
-                             (string original))))
-        (chars-to-replace (mapcar #'car *character-replacements*)))
-    (flet ((replacement-delimiter (index)
-             (cond ((or (< index 0) (>= index (length name))) "")
-                   ((alphanumericp (char name index)) "-")
-                   (t ""))))
-      (loop for index = (position-if #'(lambda (x) (member x chars-to-replace))
-                                     name)
-         while index
-         do (setf name (concatenate 'string (subseq name 0 index)
-                                    (replacement-delimiter (1- index))
-                                    (cdr (assoc (aref name index)
-                                                *character-replacements*))
-                                    (replacement-delimiter (1+ index))
-                                    (subseq name (1+ index))))))
-    name))
+`*characters-to-drop*' for customization.")
+  (:method ((symbol symbol))
+    (intern (alphanumize (symbol-name symbol))))
+  (:method (original)
+    (let ((name (remove-if (lambda (x) (member x *characters-to-drop*))
+                           (if (listp original)
+                               (flatten-to-string original)
+                               (string original))))
+          (chars-to-replace (mapcar #'car *character-replacements*)))
+      (flet ((replacement-delimiter (index)
+               (cond ((or (< index 0) (>= index (length name))) "")
+                     ((alphanumericp (char name index)) "-")
+                     (t ""))))
+        (loop for index = (position-if #'(lambda (x) (member x chars-to-replace))
+                                       name)
+           while index
+           do (setf name (concatenate 'string (subseq name 0 index)
+                                      (replacement-delimiter (1- index))
+                                      (cdr (assoc (aref name index)
+                                                  *character-replacements*))
+                                      (replacement-delimiter (1+ index))
+                                      (subseq name (1+ index))))))
+      ;; Replace multiple -- in order with something else as makeinfo combines them.
+      (loop :while (search "--" name) :do (setf name (cl-ppcre::regex-replace "--" name "-_-")))
+      name)))
 
 ;;;; generating various names
 
@@ -240,10 +259,21 @@ symbols or lists of symbols."))
           (second name)
           (third name)))
 
+(defun get-safe-name (doc)
+  (etypecase (get-name doc)
+    (symbol (intern (alphanumize (symbol-name (get-name doc)))
+                    (get-package doc)))
+    (string (alphanumize (get-name doc)))
+    (list (get-name doc))))
+
 (defun node-name (doc)
   "Returns TexInfo node name as a string for a DOCUMENTATION instance."
-  (let ((kind (get-kind doc)))
-    (format nil "~:(~A~) ~(~A~)" kind (name-using-kind/name kind (get-name doc) doc))))
+  (let* ((kind (get-kind doc))
+         (name (format nil "~:(~A~) ~(~A~)" kind (name-using-kind/name kind (get-safe-name doc) doc))))
+    (when (search "{" name)
+      (format t "~S ~S~%" name doc)
+      (setf *it* doc))
+    name))
 
 (defun package-shortest-name (package)
   (let* ((names (cons (package-name package) (package-nicknames package)))
@@ -294,7 +324,7 @@ symbols or lists of symbols."))
 
 (defun title-name (doc)
   "Returns a string to be used as name of the definition."
-  (string-downcase (title-using-kind/name (get-kind doc) (get-name doc) doc)))
+  (string-downcase (title-using-kind/name (get-kind doc) (get-safe-name doc) doc)))
 
 (defun include-pathname (doc)
   (let* ((kind (get-kind doc))
@@ -481,15 +511,18 @@ there is no corresponding docstring."
 
 ;;;; turning text into texinfo
 
-(defun escape-for-texinfo (string &optional downcasep)
-  "Return STRING with characters in *TEXINFO-ESCAPED-CHARS* escaped
-with #\@. Optionally downcase the result."
-  (let ((result (with-output-to-string (s)
-                  (loop for char across string
-                        when (find char *texinfo-escaped-chars*)
-                        do (write-char #\@ s)
-                        do (write-char char s)))))
-    (if downcasep (nstring-downcase result) result)))
+(defgeneric escape-for-texinfo (string &optional downcasep)
+  (:documentation "Return STRING with characters in *TEXINFO-ESCAPED-CHARS* escaped
+with #\@. Optionally downcase the result.")
+  (:method ((symbol symbol) &optional downcasep)
+    (intern (escape-for-texinfo (symbol-name symbol))))
+  (:method ((string string) &optional downcasep)
+    (let ((result (with-output-to-string (s)
+                    (loop for char across string
+                       when (find char *texinfo-escaped-chars*)
+                       do (write-char #\@ s)
+                       do (write-char char s)))))
+      (if downcasep (nstring-downcase result) result))))
 
 ;;; TODO: Maybe everything in here should at some point get
 ;;;       first-class support as specialized syntax.
@@ -899,9 +932,10 @@ followed another tabulation label or a tabulation body."
     (let ((name (get-name doc)))
       ;; class precedence list
       (format *texinfo-output* "Class precedence list: @code{~(~{@lw{~A}~^, ~}~)}~%~%"
-              (remove-if (lambda (class)  (hide-superclass-p name class))
-                         (mapcar #'class-name
-                                 (ensure-class-precedence-list (find-class name)))))
+              (remove-if (lambda (class) (hide-superclass-p name class))
+                         (mapcar #'alphanumize
+                          (mapcar #'class-name
+                                  (ensure-class-precedence-list (find-class name))))))
       ;; slots
       (let ((slots (remove-if (lambda (slot) (hide-slot-p name slot))
                               (class-direct-slots (find-class name)))))
@@ -1254,8 +1288,10 @@ This is an @sc{sb-texinfo} autogenerated manual for ~A.
 @chapter Dictionary
 "
                 *texinfo-output*))
-  (dolist (doc docs)
-    (format *texinfo-output* "@include include/~A~%" (include-pathname doc))))
+  ;; FIXME: find out what's causing duplicates instead of just removing them.
+  (mapc (lambda (doc)
+          (format *texinfo-output* "@include include/~A~%" doc))
+        (remove-duplicates (mapcar #'include-pathname docs) :test #'equalp)))
 
 (defun files-for-package (package &aux paths)
   (flet ((%add (def)
@@ -1369,18 +1405,6 @@ if a comment contains invalid Texinfo markup, you lose."
                                 :directory (pathname-directory directory))
               (write-texinfo-string (get-string comment))))))
       directory)))
-
-(defun skip-difficult-doc (doc)
-  (let* ((original (get-name doc))
-         (name (if (listp original)
-                   (flatten-to-string original)
-                   (string original))))
-    (unless (or (search "{" name)
-                (search "}" name)
-                (search "@" name)) ; etc...
-      ;; TODO: difficult names are causing problems for texinfo.
-      (warn "Difficult names like ~S are causing problems for texinfo" (get-name doc))
-      t)))
 
 (defun generate-includes (directory packages &key base-package flatten extra-symbols)
   "Create files in DIRECTORY containing Texinfo markup of all docstrings of
@@ -1552,7 +1576,7 @@ package-inferred-system."
             (destructuring-bind (package title base) pkg
               (declare (ignorable package))
               (format *texinfo-output* "* ~a:: ~a~a.~%"
-                      base
+                      title
                       (make-string (max 0 (- (- menu-offset 4) (length base)))
                                    :initial-element #\Space)
                       title)))
@@ -1567,7 +1591,7 @@ package-inferred-system."
                    (destructuring-bind (c c-title c-base) current
                      (declare (ignorable c))
                      (destructuring-bind (n n-title n-base)
-                         (or next (list nil chapter-name nil))
+                         (or next (list nil nil nil))
                        (declare (ignorable n n-base))
                        (format *texinfo-output*
                                "~%@node ~@[~A~], ~@[~A~], ~@[~A~], ~A

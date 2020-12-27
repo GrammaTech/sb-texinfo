@@ -267,11 +267,14 @@ symbols or lists of symbols."))
           (third name)))
 
 (defun get-safe-name (doc)
-  (etypecase (get-name doc)
-    (symbol (intern (alphanumize (symbol-name (get-name doc)))
-                    (get-package doc)))
-    (string (alphanumize (get-name doc)))
-    (list (get-name doc))))
+  (let ((*character-replacements*
+         (remove-if (lambda (it) (member it (coerce *symbol-characters* 'list)))
+                    *character-replacements* :key #'car)))
+    (etypecase (get-name doc)
+      (symbol (intern (alphanumize (symbol-name (get-name doc)))
+                      (get-package doc)))
+      (string (alphanumize (get-name doc)))
+      (list (get-name doc)))))
 
 (defun node-name (doc)
   "Returns TexInfo node name as a string for a DOCUMENTATION instance."

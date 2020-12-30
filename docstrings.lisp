@@ -537,7 +537,8 @@ with #\@. Optionally downcase the result.")
 STRING is assumed to be the result of `escape-for-texinfo'."
   (let ((w/o-braces '("section" "subsection" "subsubsection" "cindex" "node"
                       "include" "end" "menu" "subsubheading"))
-        (w/braces '("uref" "ref" "pxref" "url" "code" "anchor"))
+        (w/braces '("uref" "ref" "pxref" "url" "code" "anchor" "file"
+                    "code" "env"))
         (braces 0))
     (flet ((subword-at (i word)
              (string= (subseq string i (min (length string)

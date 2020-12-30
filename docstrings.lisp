@@ -683,7 +683,8 @@ ie. if it starts with 4 whitespace and the previous line is empty"
                                 (let ((next (1+ index)))
                                   (example-section-p (maybe-line next) next lines)))
                       collect line)))
-     (values (length example) `("@example" ,@example "@end example")))))
+     (values (length example)
+             `("@cartouche" "@example" ,@example "@end example" "@end cartouche")))))
 
 ;;; lisp sections
 

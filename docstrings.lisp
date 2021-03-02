@@ -95,7 +95,6 @@
     (#\` . "backquote")
     (#\' . "singlequote")
     (#\? . "questionmark")
-    (#\Space . "space")
     (#\Tab . "tab")
     (#\Newline . "newline")
     (#\Backspace . "backspace")
@@ -208,6 +207,9 @@ up filename handling. See `*character-replacements*' and
                                (flatten-to-string original)
                                (string original))))
           (chars-to-replace (mapcar #'car *character-replacements*)))
+      ;; Replace space if it is the last character in the name
+      (when (eql #\Space (elt name (1- (length name))))
+        (setf name (subseq name 0 (1- (length name)))))
       (flet ((replacement-delimiter (index)
                (cond ((or (< index 0) (>= index (length name))) "")
                      ((alphanumericp (char name index)) "-")
